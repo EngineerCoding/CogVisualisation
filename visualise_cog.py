@@ -2,7 +2,7 @@ from sys import argv, exit
 from psycopg2 import connect
 import math
 try:
-    from piL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont
 except ImportError:
     from sys import executable
     from os import system
