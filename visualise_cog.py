@@ -8,23 +8,24 @@ except ImportError:
     from os import system
     if (input("Do you want to install the pillow dependency? (y/n)")
             .strip().lower() == "y"):
-        os.system(executable + " -m pip install pillow")
+        system(executable + " -m pip install pillow")
         print("Restart this script")
-        sys.exit()
+        exit()
     print("pillow dependency not found")
-    sys.exit(-1)
+    exit(-1)
 
 
 def to_number(argument_name, value):
     if value.strip().isnumeric():
-        return int(argv[index + 1].strip())
+        return int(value.strip())
     print("Invalid argument for {} with \"{}\"".format(argument_name, value))
-    sys.exit()
+    exit()
 
 
 def expected_cog_number():
     print("Expected cog number")
-    sys.exit()
+    exit()
+
 
 def handle_program_arguments():
     del argv[0]
@@ -58,25 +59,25 @@ def get_cog_data(cog_id):
 
 
 def draw_label(draw, point, radians, label, font):
-    label_width = font.getsize(label)
-    point[0] = (point[0] - label_width - 5
-                if 0.5 * math.pi < radians < 1.5 * math.pi else point[0] + 5)
-    point[1] = point[1] + 2 if radians < math.pi else point[1] - 2
-    if radians % math.pi == 0.0:
-        point[1] += 2
-    elif radians % 0.5 * math.pi == 0.0:
-        point[0] -= 5 + floor(label_width / 2)
-    draw.text(tuple(point), label)
+    if radians < 0.5 * math.pi or radians > 1.5 * math.pi:
+        point[0] += 5
+    elif radians > 0.5 * math.pi or radians < 1.5 * math.pi:
+        point[0] -= 5 + font.getsize(label)[0]
+    if radians < math.pi:
+        point[1] -= 10
+    elif math.pi < radians < 2 * math.pi:
+        point[1] += 10
+    draw.text(tuple(point), label, fill=(0, 0, 0))
 
 
 def get_and_draw_protein_points(draw, proteins, radius, canvas_size, font):
-    center_point = floor(canvas_size / 2)
+    center_point = math.floor(canvas_size / 2)
     point_map = dict()
     circle_step = 2 / len(proteins)
-    for i in range(1, len(proteins) + 1):
-        radians = i * circle_step * math.pi
-        x = abs(radius * math.cos(radians) - center_point)
-        y = abs(radius * math.sin(radians) - center_point)
+    for i in range(0, len(proteins)):
+        radians = (i + 1) * circle_step * math.pi
+        x = math.floor(abs(radius * math.cos(radians) + center_point) + 0.5)
+        y = math.floor(abs(radius * math.sin(radians) - center_point) + 0.5)
         point_map[proteins[i]] = (x, y)
         draw_label(draw, [x, y], radians, str(proteins[i]), font)
     return point_map
@@ -94,12 +95,13 @@ def draw_connections(draw, real_hits, point_map, theoretic_hits=[],
 
 def generate_cog_visualisation(proteins, protein_hits, canvas_size,
                                output_file):
-    image = Image.new("RGB", (canvas_size, canvas_size))
+    image = Image.new("RGB", (canvas_size, canvas_size), color=(255, 255,
+                                                                255))
     font = ImageFont.load_default()
-    max_text_width = max(map(lambda n: font.getsize(str(n)), proteins))
-    drawing_instance = ImageDraw.new(image)
+    text_width = 2 * max(map(lambda n: font.getsize(str(n))[0], proteins))
+    drawing_instance = ImageDraw.Draw(image)
     protein_point_map = get_and_draw_protein_points(
-        drawing_instance, proteins, canvas_size - 10 - max_text_width,
+        drawing_instance, proteins, (canvas_size - 10 - text_width) / 2,
         canvas_size, font)
     all_hits = []
     for index in range(len(proteins)):
@@ -109,6 +111,7 @@ def generate_cog_visualisation(proteins, protein_hits, canvas_size,
                      theoretic_hits=all_hits)
     draw_connections(drawing_instance, all_hits, protein_point_map,
                      color=(255, 0, 0))
+    image.save(output_file, "PNG")
 
 
 def main():
@@ -116,3 +119,6 @@ def main():
     cog_proteins, cog_protein_hits = get_cog_data(cog_id)
     generate_cog_visualisation(cog_proteins, cog_protein_hits, canvas_size,
                                str(cog_id) + ".png")
+
+
+main()
