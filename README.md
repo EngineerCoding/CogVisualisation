@@ -9,3 +9,8 @@ Program arguments can be found by running:
 ```
 python3 visualise_cog.py -h
 ```
+
+Dependencies for this program is Pillow:
+```
+python3 -m pip install pillow
+```
